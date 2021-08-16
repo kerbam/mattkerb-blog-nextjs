@@ -4,7 +4,7 @@ avatar: /static/images/avatar.png
 occupation: Professional Services Architect
 company: Pendo.io
 email: mattkerb@gmail.com
-linkedin: https://www.linkedin.com/mattkerbawy
+linkedin:  www.linkedin.com/in/mattkerb
 github: https://github.com/kerbam
 ---
 

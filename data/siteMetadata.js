@@ -11,7 +11,7 @@ const siteMetadata = {
   socialBanner: '/static/images/twitter-card.png',
   email: 'mattkerb@gmail.com',
   github: 'https://github.com/kerbam',
-  linkedin: 'https://www.linkedin.com/mattkerbawy',
+  linkedin: ' www.linkedin.com/in/mattkerb',
   locale: 'en-US',
   analytics: {
     // supports plausible, simpleAnalytics or googleAnalytics

@@ -121,9 +121,7 @@ export default function Home({ posts }) {
 
                           // Quick function to show tab functionality
                           function setNewContent(item) {
-                            debugger
                             // Clean up and potentially check if section is already shown
-                            // pendo.onGuideDismissed();
                             pendo.BuildingBlocks.BuildingBlockResourceCenter.dismissResourceCenter()
                             if (item.title == 'Guides') {
                               pendo.showGuideById(

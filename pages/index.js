@@ -74,9 +74,42 @@ export default function Home({ posts }) {
                   ready: function () {
                     pendo.addBodyMutationListener()
                   },
-                  guidesLoaded: function () {},
+                  guidesLoaded: function () {
+                    pendo.handleGuideLaunch()
+                    if (!pendo.dom('._adobe-rc_rc-nav-item').length) {
+                      pendo.createNavItems()
+                    } else {
+                      pendo.showGuideById(
+                        lookupModuleId(document.querySelector('[data-id="guides"]'))
+                      )
+                    }
+                  },
                 },
               })
+
+              pendo.createNavItems = function () {
+                var navItemsArray = []
+                pendo._.each(resourceCenterModuleLookup, function (module) {
+                  if (pendo.findGuideById(module.id)) {
+                    navItemsArray.push(module.html)
+                  }
+                })
+                pendo.dom('.rc-main-nav').append(navItemsArray.join('\n'))
+              }
+
+              // Make sure custom RC container closes when another guide is launched
+              pendo.handleGuideLaunch = function () {
+                pendo._.each(pendo.guides, function (guide) {
+                  pendo._.each(guide.steps, function (step) {
+                    step.before('render', function () {
+                      if (!step.guide.attributes.resourceCenter) {
+                        pendo.BuildingBlocks.BuildingBlockResourceCenter.dismissResourceCenter()
+                        closeCustomResourceCenter()
+                      }
+                    })
+                  })
+                })
+              }
 
               pendo.addBodyMutationListener = function () {
                 var rcWrapper = document.createElement('div')
@@ -97,9 +130,6 @@ export default function Home({ posts }) {
                         document
                           .getElementById('_adobe-rc_resource-center-container')
                           .classList.remove('_adobe-rc_pendo-invisible')
-                        pendo
-                          .dom('#_adobe-rc_resource-center-container')[0]
-                          .classList.remove('_adobe-rc_slide-right')
 
                         if (!pendo.adobeRcTabListeners) {
                           // Adds active class to clicked tabs.  Flushes other active tabs.
@@ -123,28 +153,8 @@ export default function Home({ posts }) {
                           function setNewContent(item) {
                             // Clean up and potentially check if section is already shown
                             pendo.BuildingBlocks.BuildingBlockResourceCenter.dismissResourceCenter()
-                            if (item.title == 'Guides') {
-                              pendo.showGuideById(
-                                '-HkbchdtpyVLjDapPPl_o-Rh6cE@pQqHDQbxwFzIXVZrd4J5sQrpfno'
-                              )
-                            }
-                            if (item.title == 'Docs') {
-                              pendo.showGuideById(
-                                'BXJQy11PX00OEIVWyOuBLMNs5ZE@pQqHDQbxwFzIXVZrd4J5sQrpfno'
-                              )
-                            }
-                            if (item.title == "What's New") {
-                              pendo.showGuideById(
-                                'ZtnRUQ36CyBVVxrbifBN-gMnLWI@pQqHDQbxwFzIXVZrd4J5sQrpfno'
-                              )
-                            }
-                            if (item.title == 'Resources') {
-                              pendo.showGuideById(
-                                '7ZJ7TiwAyEb-b4kVijCTE3t3bYk@pQqHDQbxwFzIXVZrd4J5sQrpfno'
-                              )
-                            }
+                            pendo.showGuideById(lookupModuleId(item))
                             cleanUpSectionContent(item)
-                            setUpRcModule()
                           }
 
                           pendo.adobeRcTabListeners = true
@@ -157,21 +167,18 @@ export default function Home({ posts }) {
                         if (
                           !pendo.BuildingBlocks.BuildingBlockResourceCenter.findShownResourceCenterModule()
                         ) {
-                          Array.from(
-                            document.getElementsByClassName('_adobe-rc_rc-nav-item')
-                          ).forEach((tab) => {
-                            tab.classList.remove('_adobe-rc_active-nav-item')
-                          })
-                          pendo.showGuideById(
-                            '-HkbchdtpyVLjDapPPl_o-Rh6cE@pQqHDQbxwFzIXVZrd4J5sQrpfno'
-                          )
-                          cleanUpSectionContent(document.querySelector('[data-id="guides"]'))
-                          pendo
-                            .dom('._adobe-rc_rc-nav-item[title="Guides"]')[0]
-                            .classList.add('_adobe-rc_active-nav-item')
+                          var guidesModuleNode = document.querySelector('[data-id="guides"]')
+                          pendo.showGuideById(lookupModuleId(guidesModuleNode))
+                          cleanUpSectionContent(guidesModuleNode)
                         }
+
+                        // Close custom RC when Escape key is pressed
+                        pendo.dom('body').on('keydown', function (e) {
+                          if (e.which === 27) {
+                            closeCustomResourceCenter()
+                          }
+                        })
                         addTriggerEvent()
-                        // setUpRcModule();
                       }
                     }
                   })
@@ -187,72 +194,128 @@ export default function Home({ posts }) {
 
                 observer.observe(target, config)
               }
-              var rcHtml = `
-                        <div id="_adobe-rc_resource-center-container" class="rc-container _adobe-rc_slide-right _adobe-rc_pendo-invisible">
-                        <!-- RC HEADER -->
-                        <div class="rc-header-section">
-                            <div class="rc-main-nav _adobe-rc_rc-nav">
-                                <div class="_adobe-rc_rc-nav-item" data-id="guides" title="Guides">
-                                Guides
-                                </div>
-                                <div class="_adobe-rc_rc-nav-item" data-id="docs" title="Docs">
-                                Docs & Community
-                                </div>
-                                <div class="_adobe-rc_rc-nav-item" data-id="whatsnew" title="What's New">
-                                What's New
-                                </div>
-                                <div class="_adobe-rc_rc-nav-item" data-id="resources" title="Resources">
-                                Resources
-                                </div>
-                            </div>
-                            </div>
-                        <!-- RC HOME VIEW / Get Started -->
-                        <div class="_adobe-rc_rc-home-view _adobe-rc_pendo-visible">
-                            <div id="_adobe-rc_rc-content-pane"></div>
-                        </div>
-                            <!-- Whats New Divider -->
-                            <div class="_adobe-rc_rc-whats-new-divider _adobe-rc_pendo-invisible"></div>
-                            </div>
-                            `
+              var openClass = 'guide-accordion-open'
+              var rcHtml = [
+                '<div id="_adobe-rc_resource-center-container" class="rc-container _adobe-rc_slide-right _adobe-rc_pendo-invisible">',
+                '<!-- RC HEADER -->',
+                '<div class="rc-header-section">',
+                '<div class="rc-main-nav _adobe-rc_rc-nav">',
+                '</div>',
+                '</div>',
+                '<!-- RC HOME VIEW / Get Started -->',
+                '<div class="_adobe-rc_rc-home-view _adobe-rc_pendo-visible">',
+                '<div id="_adobe-rc_rc-content-pane"></div>',
+                '</div>',
+              ].join('\n')
+
+              var resourceCenterModuleLookup = [
+                {
+                  displayName: 'Guides',
+                  title: 'guides',
+                  id: '-HkbchdtpyVLjDapPPl_o-Rh6cE@pQqHDQbxwFzIXVZrd4J5sQrpfno',
+                  html:
+                    '<div class="_adobe-rc_rc-nav-item _adobe-rc_active-nav-item" data-id="guides" title="guides">Guides</div>',
+                },
+                {
+                  displayName: 'Docs & Community',
+                  title: 'docs',
+                  id: 'BXJQy11PX00OEIVWyOuBLMNs5ZE@pQqHDQbxwFzIXVZrd4J5sQrpfno',
+                  html:
+                    '<div class="_adobe-rc_rc-nav-item" data-id="docs" title="docs">Docs & Community</div>',
+                },
+                {
+                  displayName: "What's New",
+                  title: 'whatsnew',
+                  id: 'ZtnRUQ36CyBVVxrbifBN-gMnLWI@pQqHDQbxwFzIXVZrd4J5sQrpfno',
+                  html:
+                    '<div class="_adobe-rc_rc-nav-item" data-id="whatsnew" title="whatsnew">What\'s New</div>',
+                },
+                {
+                  displayName: 'Resources',
+                  title: 'resources',
+                  id: '7ZJ7TiwAyEb-b4kVijCTE3t3bYk@pQqHDQbxwFzIXVZrd4J5sQrpfno',
+                  html:
+                    '<div class="_adobe-rc_rc-nav-item" data-id="resources" title="resources">Resources</div>',
+                },
+              ]
+
+              function addGuideAccordions(category, categoryGuidesElements) {
+                var accordionGuides = [...categoryGuidesElements].splice(0, 1).shift()
+                pendo.dom(`.${category[1]} .guide-list`).append(accordionGuides)
+                pendo.dom(`.${category[1]} .guide-list li`).addClass('hidden-element')
+                pendo.dom(`.${category[1]} .guide-accordion-button`)[0].textContent = `+ ${
+                  pendo.dom(`.${category[1]} .guide-list li`).length
+                } more`
+                pendo.dom(`.${category[1]} .guide-accordion-button`).on('click', function (e) {
+                  var categoryContainer = document.querySelector(`.${category[1]}`)
+                  var originalGuideCategoryHeight = Number(
+                    pendo.dom.getComputedStyle(categoryContainer)
+                  ).height.replace(/\D+/g, '')
+                  // Accordion toggle logic
+                  var accordion = pendo.dom(eventTarget(e)).closest('.guide-accordion')
+                  // Note: if you have nested accordions and resuse the '_pendo-module-accordion-open_'
+                  // class it will close all open nested accordions as well
+                  var openAccordion = pendo.dom(openClass)
+
+                  pendo.dom(`.${category[1]} .guide-list`).css({
+                    height: 0,
+                  })
+
+                  if (openAccordion && openAccordion[0] !== accordion[0]) {
+                    openAccordion.toggleClass(openClass)
+                    pendo.dom(`.${category[1]} .guide-list li`).addClass('hidden-element')
+                  }
+
+                  accordion.toggleClass(openClass)
+
+                  if (accordion.hasClass(openClass)) {
+                    var guideListHeight = 0
+                    pendo.dom(`.${category[1]} .guide-list li`).removeClass('hidden-element')
+                    pendo.dom(`.${category[1]} .guide-accordion-button`)[0].textContent =
+                      '- Collapse'
+                    pendo._.each(pendo.dom(`.${category[1]} .guide-accordion li`), function (item) {
+                      guideListHeight = guideListHeight + pendo.dom(item).height()
+                    })
+                    var newGuideCategoryHeight = originalGuideCategoryHeight + guideListHeight
+                    console.log({
+                      glh: guideListHeight,
+                      nh: newGuideCategoryHeight,
+                      oh: originalGuideCategoryHeight,
+                    })
+                    pendo.dom(`.${category[1]}`).css({ height: newGuideCategoryHeight })
+                  } else {
+                    console.log({ oh: originalGuideCategoryHeight })
+                    pendo.dom(`.${category[1]}`).css({ height: originalGuideCategoryHeight })
+                    pendo.dom(`.${category[1]} .guide-accordion-button`)[0].textContent = `+ ${
+                      pendo.dom(`.${category[1]} .guide-list li`).length
+                    } more`
+                  }
+                })
+              }
 
               function addGuideCategoryElements() {
+                if (pendo.dom('._pendo-text-list-ordered .guideCategory').length) return
                 var categoryNodes = `<div class="guideCategory beginner">
                                                     <h3 class="categoryHeader">Beginner</h3>
                                                     </div>
                                                     <div class="guideCategory intermediate">
-                                                    <h3 class="categoryHeader">Intermediate</h3>
+                                                        <h3 class="categoryHeader">Intermediate</h3>
                                                     </div>
                                                     <div class="guideCategory advanced">
-                                                    <h3 class="categoryHeader">Advanced</h3>
+                                                        <h3 class="categoryHeader">Advanced</h3>
                                                     </div>
                                                     <div class="guideCategory admin">
-                                                    <h3 class="categoryHeader">Admin</h3>
+                                                        <h3 class="categoryHeader">Admin</h3>
                                                     </div>
                                                     <div class="guideCategory unknown">
-                                                    <h3 class="categoryHeader">Misc.</h3>
+                                                        <h3 class="categoryHeader">Misc.</h3>
                                                     </div>`
-                console.log('adding guide categories')
                 var guideListContainer = pendo.dom(
                   '._pendo-resource-center-guidelist-module-list'
                 )[0]
                 if (guideListContainer) {
                   pendo.dom('._pendo-resource-center-guidelist-module-list').append(categoryNodes)
                 }
-              }
-
-              function addGuideShowEvent() {
-                pendo.dom('._pendo-resource-center-guidelist-module-list').on(
-                  'click',
-                  pendo._.throttle((e) => {
-                    var target = pendo
-                      .dom(eventTarget(e))
-                      .closest('._pendo-resource-center-guidelist-module-listed-guide')
-                    if (target) {
-                      pendo.dom('#_adobe-rc_resource-center-container').toggleClass('hiddenRC')
-                    }
-                  }),
-                  100
-                )
               }
 
               function addTriggerEvent() {
@@ -264,9 +327,11 @@ export default function Home({ posts }) {
                         .dom('._pendo-resource-center-badge-container')[0]
                         .classList.contains('triggered')
                     ) {
-                      pendo.dom('#_adobe-rc_resource-center-container').addClass('hiddenRC')
+                      pendo.dom('#_adobe-rc_resource-center-container').addClass('hidden-element')
                     } else {
-                      pendo.dom('#_adobe-rc_resource-center-container').removeClass('hiddenRC')
+                      pendo
+                        .dom('#_adobe-rc_resource-center-container')
+                        .removeClass('hidden-element')
                     }
                   }),
                   100
@@ -279,26 +344,95 @@ export default function Home({ posts }) {
                 )[0]
                 if (searchBar) {
                   pendo.dom(searchBar).appendTo('#pendo-resource-center-container')
+                  pendo.dom(searchBar).attr({ autocomplete: 'off' })
                 }
                 pendo.dom(searchBar).on('input', (e) => {
-                  if (e.inputType === 'insertText') {
-                    pendo._.each(pendo.dom('.categoryHeader'), (header) =>
-                      pendo.dom(header).addClass('hiddenCategory')
+                  setUpSearchResultsContainer()
+                  if (checkForNoMatches() === 'block') return
+                  if (e.inputType === 'insertText' && pendo.dom(searchBar)[0].value.length > 3) {
+                    var debouncedSearchResults = pendo._.debounce(createSearchResultsContainer, 120)
+                    debouncedSearchResults(
+                      pendo.dom('.guideCategory li:not([style*="display: none"])')
                     )
                   }
                   if (
                     e.inputType === 'deleteContentBackward' &&
                     pendo.dom(searchBar)[0].value.length === 0
                   ) {
-                    pendo._.each(pendo.dom('.categoryHeader'), (header) =>
-                      pendo.dom(header).removeClass('hiddenCategory')
-                    )
+                    teardownSearchResultsContainer()
+                    cleanUpSectionContent(document.querySelector('[data-id="guides"]'))
+                    pendo.dom('#pendo-search-results-container').remove()
+                    pendo.dom(searchBar).focus()
                   }
                 })
               }
 
+              function checkForNoMatches() {
+                var noResultsContainer = pendo.dom('#pendo-no-matches-container')
+                return pendo.dom.getComputedStyle(noResultsContainer[0]).display
+              }
+
+              function cleanUpSectionContent(item) {
+                var cleanUpGuides = function () {
+                  addGuideCategoryElements()
+                  adjustSearch()
+                  if (!pendo.designer) {
+                    moveGuides()
+                  }
+                }
+
+                var cleanUpDocs = function () {}
+
+                var cleanUpWhatsNew = function () {}
+
+                var cleanUpResources = function () {}
+
+                var sections = {
+                  guides: cleanUpGuides,
+                  whatsnew: cleanUpWhatsNew,
+                  docs: cleanUpDocs,
+                  resources: cleanUpResources,
+                }
+
+                var id = item.dataset?.id || item.title
+                sections[id]()
+                setAnnouncementLinkIcon(item)
+              }
+
+              // Helper function to close the custom resource center
+              var closeCustomResourceCenter = function () {
+                pendo
+                  .dom('#_adobe-rc_resource-center-container')
+                  .addClass('_adobe-rc_pendo-invisible')
+                pendo.dom('#_adobe-rc_resource-center-container').addClass('hidden-element')
+              }
+
+              function createSearchResultsContainer(results) {
+                if (checkForNoMatches() === 'block') return
+                if (pendo.dom('#pendo-search-results-container').length) {
+                  pendo.dom('._search-results-list').append(results)
+                } else {
+                  var html = [
+                    '<div id="pendo-search-results-container">',
+                    '<div id="_pendo-guide-search-results" class="bb-text _pendo-simple-text"',
+                    'style="display: block; color: rgb(0, 0, 0); font-size: 14px; letter-spacing: 0px; line-height: 1.4; overflow-wrap: break-word; padding: 24px 0px 0px; position: relative; text-transform: none; width: auto; font-weight: 400; text-align: center; margin: 0px; float: none; vertical-align: baseline; white-space: pre-wrap;">',
+                    'Search Results</div>',
+                    '<div class="bb-text _pendo-simple-text _search-results-list"',
+                    'style="display: block; color: rgb(106, 108, 117); font-size: 12px; letter-spacing: 0px; line-height: 1.4; overflow-wrap: break-word; padding: 18px 0px 0px; position: relative; text-transform: none; width: auto; font-weight: 400; text-align: center; margin: 0px 43px; float: none; vertical-align: baseline; white-space: pre-wrap;">',
+                    '</div>',
+                    '</div>',
+                  ].join('\n')
+                  pendo.dom('._pendo-resource-center-guidelist-module-list').append(html)
+                  pendo.dom('._search-results-list').append(results)
+                }
+              }
+
               function eventTarget(e) {
                 return (e && e.target) || e.srcElement
+              }
+
+              function lookupModuleId(item) {
+                return pendo._.findWhere(resourceCenterModuleLookup, { title: item.title }).id
               }
 
               function moveGuides() {
@@ -333,58 +467,52 @@ export default function Home({ posts }) {
                   })
                   pendo._.each(pendo.dom('.guideCategory'), (category) => {
                     if (category.getElementsByTagName('LI').length < 1) {
-                      category.classList.add('hiddenCategory')
+                      category.classList.add('hidden-element')
+                    }
+                    if (category.getElementsByTagName('LI').length > 2) {
+                      pendo.dom(`.${category.classList[1]} .guide-accordion`).remove()
+                      pendo
+                        .dom(category)
+                        .append(
+                          `<div class="guide-accordion"><button class="guide-accordion-button"></button><div class="guide-list"</div></div>`
+                        )
+                      addGuideAccordions(
+                        [...category.classList],
+                        category.getElementsByTagName('LI')
+                      )
                     }
                   })
                 }
               }
 
               function setAnnouncementLinkIcon(item) {
+                var id = item.dataset?.id || item.title
                 var announcementLinkNode =
                   '<a id="announcement-link-icon" class="icon-fontello-37" href="https://pendo.io" target="_blank"></a>'
-                if (item.dataset.id !== 'whatsnew' && pendo.dom('#announcement-link-icon').length) {
+                if (id !== 'whatsnew' && pendo.dom('#announcement-link-icon').length) {
                   pendo
                     .dom('._adobe-rc_rc-home-view')[0]
                     .removeChild(pendo.dom('#announcement-link-icon')[0])
                 } else {
-                  if (
-                    item.dataset.id === 'whatsnew' &&
-                    !pendo.dom('#announcement-link-icon').length
-                  ) {
-                    pendo.dom('._adobe-rc_rc-home-view').append(announcementLinkNode)
+                  if (id === 'whatsnew' && !pendo.dom('#announcement-link-icon').length) {
+                    pendo.dom('#pendo-resource-center-container').append(announcementLinkNode)
                   }
                 }
               }
 
-              function cleanUpSectionContent(item) {
-                var cleanUpGuides = function () {
-                  addGuideCategoryElements()
-                  adjustSearch()
-                  if (!pendo.designer) {
-                    moveGuides()
-                  }
-                }
-
-                var cleanUpDocs = function () {}
-
-                var cleanUpWhatsNew = function () {}
-
-                var cleanUpResources = function () {}
-
-                var sections = {
-                  guides: cleanUpGuides,
-                  whatsnew: cleanUpWhatsNew,
-                  docs: cleanUpDocs,
-                  resources: cleanUpResources,
-                }
-
-                if (!pendo._.isUndefined(item.dataset)) {
-                  sections[item.dataset.id]()
-                  setAnnouncementLinkIcon(item)
-                }
+              function setUpSearchResultsContainer() {
+                pendo.dom('.categoryHeader').addClass('hidden-element')
+                pendo.dom('.guide-accordion-button').addClass('hidden-element')
+                pendo.dom('.guideCategory').addClass('hidden-element')
+                pendo.dom('.guide-list li').removeClass('hidden-element')
               }
 
-              function setUpRcModule() {}
+              function teardownSearchResultsContainer() {
+                pendo.dom('.categoryHeader').removeClass('hidden-element')
+                pendo.dom('.guide-accordion-button').removeClass('hidden-element')
+                pendo.dom('.guideCategory').removeClass('hidden-element')
+                pendo.dom('.guide-list li').addClass('hidden-element')
+              }
             })('a2d9f4cd-4232-4b44-510a-9a8837a517f9')
           }
         })()}

@@ -247,49 +247,85 @@ export default function Home({ posts }) {
                   pendo.dom(`.${category[1]} .guide-list li`).length
                 } more`
                 pendo.dom(`.${category[1]} .guide-accordion-button`).on('click', function (e) {
-                  var categoryContainer = document.querySelector(`.${category[1]}`)
-                  var originalGuideCategoryHeight = Number(
-                    pendo.dom.getComputedStyle(categoryContainer)
-                  ).height.replace(/\D+/g, '')
                   // Accordion toggle logic
                   var accordion = pendo.dom(eventTarget(e)).closest('.guide-accordion')
                   // Note: if you have nested accordions and resuse the '_pendo-module-accordion-open_'
                   // class it will close all open nested accordions as well
-                  var openAccordion = pendo.dom(openClass)
+                  var openAccordion = pendo.dom(`.${openClass}`)
 
                   pendo.dom(`.${category[1]} .guide-list`).css({
                     height: 0,
                   })
 
-                  if (openAccordion && openAccordion[0] !== accordion[0]) {
-                    openAccordion.toggleClass(openClass)
-                    pendo.dom(`.${category[1]} .guide-list li`).addClass('hidden-element')
+                  if (openAccordion.length && openAccordion[0] !== accordion[0]) {
+                    closeAccordion(category, openAccordion, 'openAccordion')
                   }
 
                   accordion.toggleClass(openClass)
 
                   if (accordion.hasClass(openClass)) {
-                    var guideListHeight = 0
                     pendo.dom(`.${category[1]} .guide-list li`).removeClass('hidden-element')
                     pendo.dom(`.${category[1]} .guide-accordion-button`)[0].textContent =
                       '- Collapse'
-                    pendo._.each(pendo.dom(`.${category[1]} .guide-accordion li`), function (item) {
-                      guideListHeight = guideListHeight + pendo.dom(item).height()
+
+                    calculateCategoryContainerHeight(category)
+                    pendo.dom(`.${category[1]}`).css({
+                      height:
+                        pendo.pro.guideCategoryHeights[`${category[1]}`].newGuideCategoryHeight,
                     })
-                    var newGuideCategoryHeight = originalGuideCategoryHeight + guideListHeight
-                    console.log({
-                      glh: guideListHeight,
-                      nh: newGuideCategoryHeight,
-                      oh: originalGuideCategoryHeight,
-                    })
-                    pendo.dom(`.${category[1]}`).css({ height: newGuideCategoryHeight })
                   } else {
-                    console.log({ oh: originalGuideCategoryHeight })
-                    pendo.dom(`.${category[1]}`).css({ height: originalGuideCategoryHeight })
-                    pendo.dom(`.${category[1]} .guide-accordion-button`)[0].textContent = `+ ${
-                      pendo.dom(`.${category[1]} .guide-list li`).length
-                    } more`
+                    closeAccordion(category, openAccordion, 'differentAccordion')
                   }
+                })
+              }
+
+              function closeAccordion(category, openAccordion, type) {
+                if (type === 'openAccordion') {
+                  pendo.dom(`.${openClass} .guide-list li`).addClass('hidden-element')
+                  if (!pendo._.isUndefined(pendo.pro.guideCategoryHeights)) {
+                    var openCategorySection = openAccordion[0]?.dataset.section
+                    var originalHeight =
+                      pendo.pro.guideCategoryHeights[`${openCategorySection}`]
+                        .originalGuideCategoryHeight
+                    pendo.dom(`.${openCategorySection}`).css({ height: originalHeight })
+                  }
+                  pendo.dom(`.${openClass} .guide-accordion-button`)[0].textContent = `+ ${
+                    pendo.dom(`.${openClass} .guide-list li`).length
+                  } more`
+                  openAccordion.toggleClass(openClass)
+                }
+
+                if (type === 'differentAccordion') {
+                  pendo.dom(`.${category[1]}`).css({
+                    height:
+                      pendo.pro.guideCategoryHeights[`${category[1]}`].originalGuideCategoryHeight,
+                  })
+                  pendo.dom(`.${category[1]} .guide-list li`).addClass('hidden-element')
+                  pendo.dom(`.${category[1]} .guide-accordion-button`)[0].textContent = `+ ${
+                    pendo.dom(`.${category[1]} .guide-list li`).length
+                  } more`
+                }
+              }
+
+              function calculateCategoryContainerHeight(category) {
+                if (pendo._.isUndefined(pendo.pro)) {
+                  pendo.pro = {}
+                  pendo.pro.guideCategoryHeights = {}
+                  pendo.pro.guideCategoryHeights[`${category[1]}`] = {}
+                }
+                var categoryContainer = document.querySelector(`.${category[1]}`)
+                var guideListHeight = 0
+                var originalGuideCategoryHeight = Number(
+                  pendo.dom.getComputedStyle(categoryContainer).height.replace(/\D+/g, '')
+                )
+                pendo._.each(pendo.dom(`.${category[1]} .guide-accordion li`), function (item) {
+                  guideListHeight = guideListHeight + pendo.dom(item).height()
+                })
+                var newGuideCategoryHeight = originalGuideCategoryHeight + guideListHeight
+                return (pendo.pro.guideCategoryHeights[`${category[1]}`] = {
+                  guideListHeight: guideListHeight,
+                  originalGuideCategoryHeight: originalGuideCategoryHeight,
+                  newGuideCategoryHeight: newGuideCategoryHeight,
                 })
               }
 
@@ -474,7 +510,7 @@ export default function Home({ posts }) {
                       pendo
                         .dom(category)
                         .append(
-                          `<div class="guide-accordion"><button class="guide-accordion-button"></button><div class="guide-list"</div></div>`
+                          `<div class="guide-accordion" data-section="${category.classList[1]}"><button class="guide-accordion-button"></button><div class="guide-list"</div></div>`
                         )
                       addGuideAccordions(
                         [...category.classList],

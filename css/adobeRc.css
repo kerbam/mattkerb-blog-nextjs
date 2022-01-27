@@ -1,8 +1,3 @@
-/* Adobe CSS */
-* {
-  font-family: 'Adobe Clean';
-}
-
 .visible {
   display: block;
 }
@@ -389,7 +384,6 @@
   height: auto;
 }
 
-/* \
-Remove padding from ol guide list
-
-*/
+.guide-list li:nth-child(1) {
+  padding-top: 4px !important;
+}

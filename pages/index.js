@@ -75,7 +75,6 @@ export default function Home({ posts }) {
                     pendo.addBodyMutationListener()
                   },
                   guidesLoaded: function () {
-                    pendo.handleGuideLaunch()
                     if (!pendo.dom('._adobe-rc_rc-nav-item').length) {
                       pendo.createNavItems()
                     } else {
@@ -95,20 +94,6 @@ export default function Home({ posts }) {
                   }
                 })
                 pendo.dom('.rc-main-nav').append(navItemsArray.join('\n'))
-              }
-
-              // Make sure custom RC container closes when another guide is launched
-              pendo.handleGuideLaunch = function () {
-                pendo._.each(pendo.guides, function (guide) {
-                  pendo._.each(guide.steps, function (step) {
-                    step.before('render', function () {
-                      if (!step.guide.attributes.resourceCenter) {
-                        pendo.BuildingBlocks.BuildingBlockResourceCenter.dismissResourceCenter()
-                        closeCustomResourceCenter()
-                      }
-                    })
-                  })
-                })
               }
 
               pendo.addBodyMutationListener = function () {
@@ -279,56 +264,6 @@ export default function Home({ posts }) {
                 })
               }
 
-              function closeAccordion(category, openAccordion, type) {
-                if (type === 'openAccordion') {
-                  pendo.dom(`.${openClass} .guide-list li`).addClass('hidden-element')
-                  if (!pendo._.isUndefined(pendo.pro.guideCategoryHeights)) {
-                    var openCategorySection = openAccordion[0]?.dataset.section
-                    var originalHeight =
-                      pendo.pro.guideCategoryHeights[`${openCategorySection}`]
-                        .originalGuideCategoryHeight
-                    pendo.dom(`.${openCategorySection}`).css({ height: originalHeight })
-                  }
-                  pendo.dom(`.${openClass} .guide-accordion-button`)[0].textContent = `+ ${
-                    pendo.dom(`.${openClass} .guide-list li`).length
-                  } more`
-                  openAccordion.toggleClass(openClass)
-                }
-
-                if (type === 'differentAccordion') {
-                  pendo.dom(`.${category[1]}`).css({
-                    height:
-                      pendo.pro.guideCategoryHeights[`${category[1]}`].originalGuideCategoryHeight,
-                  })
-                  pendo.dom(`.${category[1]} .guide-list li`).addClass('hidden-element')
-                  pendo.dom(`.${category[1]} .guide-accordion-button`)[0].textContent = `+ ${
-                    pendo.dom(`.${category[1]} .guide-list li`).length
-                  } more`
-                }
-              }
-
-              function calculateCategoryContainerHeight(category) {
-                if (pendo._.isUndefined(pendo.pro)) {
-                  pendo.pro = {}
-                  pendo.pro.guideCategoryHeights = {}
-                  pendo.pro.guideCategoryHeights[`${category[1]}`] = {}
-                }
-                var categoryContainer = document.querySelector(`.${category[1]}`)
-                var guideListHeight = 0
-                var originalGuideCategoryHeight = Number(
-                  pendo.dom.getComputedStyle(categoryContainer).height.replace(/\D+/g, '')
-                )
-                pendo._.each(pendo.dom(`.${category[1]} .guide-accordion li`), function (item) {
-                  guideListHeight = guideListHeight + pendo.dom(item).height()
-                })
-                var newGuideCategoryHeight = originalGuideCategoryHeight + guideListHeight
-                return (pendo.pro.guideCategoryHeights[`${category[1]}`] = {
-                  guideListHeight: guideListHeight,
-                  originalGuideCategoryHeight: originalGuideCategoryHeight,
-                  newGuideCategoryHeight: newGuideCategoryHeight,
-                })
-              }
-
               function addGuideCategoryElements() {
                 if (pendo.dom('._pendo-text-list-ordered .guideCategory').length) return
                 var categoryNodes = `<div class="guideCategory beginner">
@@ -372,6 +307,10 @@ export default function Home({ posts }) {
                   }),
                   100
                 )
+                pendo.dom('._pendo-text-list-item').on('click', function () {
+                  pendo.BuildingBlocks.BuildingBlockResourceCenter.dismissResourceCenter()
+                  closeCustomResourceCenter()
+                })
               }
 
               function adjustSearch() {
@@ -385,7 +324,7 @@ export default function Home({ posts }) {
                 pendo.dom(searchBar).on('input', (e) => {
                   setUpSearchResultsContainer()
                   if (checkForNoMatches() === 'block') return
-                  if (e.inputType === 'insertText' && pendo.dom(searchBar)[0].value.length > 3) {
+                  if (e.inputType === 'insertText' && pendo.dom(searchBar)[0].value.length > 2) {
                     var debouncedSearchResults = pendo._.debounce(createSearchResultsContainer, 120)
                     debouncedSearchResults(
                       pendo.dom('.guideCategory li:not([style*="display: none"])')
@@ -400,6 +339,28 @@ export default function Home({ posts }) {
                     pendo.dom('#pendo-search-results-container').remove()
                     pendo.dom(searchBar).focus()
                   }
+                })
+              }
+
+              function calculateCategoryContainerHeight(category) {
+                if (pendo._.isUndefined(pendo.pro)) {
+                  pendo.pro = {}
+                  pendo.pro.guideCategoryHeights = {}
+                  pendo.pro.guideCategoryHeights[`${category[1]}`] = {}
+                }
+                var categoryContainer = document.querySelector(`.${category[1]}`)
+                var guideListHeight = 0
+                var originalGuideCategoryHeight = Number(
+                  pendo.dom.getComputedStyle(categoryContainer).height.replace(/\D+/g, '')
+                )
+                pendo._.each(pendo.dom(`.${category[1]} .guide-accordion li`), function (item) {
+                  guideListHeight = guideListHeight + pendo.dom(item).height()
+                })
+                var newGuideCategoryHeight = originalGuideCategoryHeight + guideListHeight
+                return (pendo.pro.guideCategoryHeights[`${category[1]}`] = {
+                  guideListHeight: guideListHeight,
+                  originalGuideCategoryHeight: originalGuideCategoryHeight,
+                  newGuideCategoryHeight: newGuideCategoryHeight,
                 })
               }
 
@@ -433,6 +394,34 @@ export default function Home({ posts }) {
                 var id = item.dataset?.id || item.title
                 sections[id]()
                 setAnnouncementLinkIcon(item)
+              }
+
+              function closeAccordion(category, openAccordion, type) {
+                if (type === 'openAccordion') {
+                  pendo.dom(`.${openClass} .guide-list li`).addClass('hidden-element')
+                  if (!pendo._.isUndefined(pendo.pro.guideCategoryHeights)) {
+                    var openCategorySection = openAccordion[0]?.dataset.section
+                    var originalHeight =
+                      pendo.pro.guideCategoryHeights[`${openCategorySection}`]
+                        .originalGuideCategoryHeight
+                    pendo.dom(`.${openCategorySection}`).css({ height: originalHeight })
+                  }
+                  pendo.dom(`.${openClass} .guide-accordion-button`)[0].textContent = `+ ${
+                    pendo.dom(`.${openClass} .guide-list li`).length
+                  } more`
+                  openAccordion.toggleClass(openClass)
+                }
+
+                if (type === 'differentAccordion') {
+                  pendo.dom(`.${category[1]}`).css({
+                    height:
+                      pendo.pro.guideCategoryHeights[`${category[1]}`].originalGuideCategoryHeight,
+                  })
+                  pendo.dom(`.${category[1]} .guide-list li`).addClass('hidden-element')
+                  pendo.dom(`.${category[1]} .guide-accordion-button`)[0].textContent = `+ ${
+                    pendo.dom(`.${category[1]} .guide-list li`).length
+                  } more`
+                }
               }
 
               // Helper function to close the custom resource center

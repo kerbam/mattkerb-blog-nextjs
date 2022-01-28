@@ -312,6 +312,9 @@
 #announcement-link-icon {
   display: flex;
   flex-direction: row-reverse;
+  top: 98%;
+  left: 1%;
+  position: relative;
 }
 
 ._pendo-resource-center-sandbox-module-code-container {

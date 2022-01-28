@@ -456,6 +456,21 @@ export default function Home({ posts }) {
                 return (e && e.target) || e.srcElement
               }
 
+              function findDomJsonVal(object, key) {
+                var value
+                Object.keys(object).some(function (k) {
+                  if (k === key) {
+                    value = object[k]
+                    return true
+                  }
+                  if (object[k] && typeof object[k] === 'object') {
+                    value = findVal(object[k], key)
+                    return value !== undefined
+                  }
+                })
+                return value
+              }
+
               function lookupModuleId(item) {
                 return pendo._.findWhere(resourceCenterModuleLookup, { title: item.title }).id
               }
@@ -463,6 +478,11 @@ export default function Home({ posts }) {
               function moveGuides() {
                 var eligibleGuides = pendo.BuildingBlocks.BuildingBlockResourceCenter.getResourceCenter()
                   .activeModule.guidesInModule
+                var guideModuleChildren = findDomJsonVal(
+                  pendo.BuildingBlocks.BuildingBlockResourceCenter.getResourceCenter().activeModule.activeStep()
+                    .domJson,
+                  'templateChildren'
+                )
 
                 function checkGuideNameForSection(guide) {
                   if (guide.name.includes('[ADMIN]')) {

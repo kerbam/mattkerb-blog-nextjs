@@ -464,7 +464,7 @@ export default function Home({ posts }) {
                     return true
                   }
                   if (object[k] && typeof object[k] === 'object') {
-                    value = findVal(object[k], key)
+                    value = findDomJsonVal(object[k], key)
                     return value !== undefined
                   }
                 })

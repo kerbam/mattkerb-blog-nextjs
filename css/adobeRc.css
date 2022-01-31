@@ -362,9 +362,42 @@
   padding-bottom: 6px !important;
 }
 
+._search-results-header {
+  display: block;
+  color: rgb(0, 0, 0);
+  font-size: 14px;
+  letter-spacing: 0px;
+  line-height: 1.4;
+  overflow-wrap: break-word;
+  padding: 24px 0px 0px;
+  position: relative;
+  text-transform: none;
+  width: auto;
+  font-weight: 400;
+  text-align: center;
+  margin: 0px;
+  float: none;
+  white-space: pre-wrap;
+}
+
 ._search-results-list {
   padding: 0px !important;
   text-align: left !important;
+  display: block;
+  color: rgb(106, 108, 117);
+  font-size: 12px;
+  letter-spacing: 0px;
+  line-height: 1.4;
+  overflow-wrap: break-word;
+  padding: 18px 0px 0px;
+  position: relative;
+  text-transform: none;
+  width: auto;
+  font-weight: 400;
+  text-align: center;
+  margin: 0px 43px;
+  float: none;
+  white-space: pre-wrap;
 }
 
 #_pendo-guide-search-results {

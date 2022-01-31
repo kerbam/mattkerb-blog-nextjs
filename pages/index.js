@@ -1,17 +1,18 @@
-import Link from '@/components/Link'
-import { PageSEO } from '@/components/SEO'
-import Tag from '@/components/Tag'
-import siteMetadata from '@/data/siteMetadata'
-import { getAllFilesFrontMatter } from '@/lib/mdx'
-import formatDate from '@/lib/utils/formatDate'
-import Script from 'next/script'
+import Link from '@/components/Link';
+import { PageSEO } from '@/components/SEO';
+import Tag from '@/components/Tag';
+import siteMetadata from '@/data/siteMetadata';
+import { getAllFilesFrontMatter } from '@/lib/mdx';
+import formatDate from '@/lib/utils/formatDate';
+import Script from 'next/script';
+import { debounce, once } from 'lodash';
 
-const MAX_DISPLAY = 5
+const MAX_DISPLAY = 5;
 
 export async function getStaticProps() {
-  const posts = await getAllFilesFrontMatter('blog')
+  const posts = await getAllFilesFrontMatter('blog');
 
-  return { props: { posts } }
+  return { props: { posts } };
 }
 
 export default function Home({ posts }) {
@@ -21,12 +22,12 @@ export default function Home({ posts }) {
         id="pendo"
         onLoad={(function () {
           if (process.browser) {
-            ;(function (apiKey) {
-              ;(function (p, e, n, d, o) {
-                var v, w, x, y, z
-                o = p[d] = p[d] || {}
-                o._q = o._q || []
-                v = ['initialize', 'identify', 'updateOptions', 'pageLoad', 'track']
+            (function (apiKey) {
+              (function (p, e, n, d, o) {
+                var v, w, x, y, z;
+                o = p[d] = p[d] || {};
+                o._q = o._q || [];
+                v = ['initialize', 'identify', 'updateOptions', 'pageLoad', 'track'];
                 for (w = 0, x = v.length; w < x; ++w)
                   (function (m) {
                     o[m] =
@@ -34,15 +35,15 @@ export default function Home({ posts }) {
                       function () {
                         o._q[m === v[0] ? 'unshift' : 'push'](
                           [m].concat([].slice.call(arguments, 0))
-                        )
-                      }
-                  })(v[w])
-                y = e.createElement(n)
-                y.async = !0
-                y.src = 'https://cdn.pendo.io/agent/static/' + apiKey + '/pendo.js'
-                z = e.getElementsByTagName(n)[0]
-                z.parentNode.insertBefore(y, z)
-              })(window, document, 'script', 'pendo')
+                        );
+                      };
+                  })(v[w]);
+                y = e.createElement(n);
+                y.async = !0;
+                y.src = 'https://cdn.pendo.io/agent/static/' + apiKey + '/pendo.js';
+                z = e.getElementsByTagName(n)[0];
+                z.parentNode.insertBefore(y, z);
+              })(window, document, 'script', 'pendo');
 
               // Call this whenever information about your visitors becomes available
               // Please use Strings, Numbers, or Bools for value types.
@@ -72,36 +73,43 @@ export default function Home({ posts }) {
                 },
                 events: {
                   ready: function () {
-                    pendo.addBodyMutationListener()
+                    pendo.addBodyMutationListener();
                   },
                   guidesLoaded: function () {
                     if (!pendo.dom('._adobe-rc_rc-nav-item').length) {
-                      pendo.createNavItems()
+                      pendo.createNavItems();
                     } else {
                       pendo.showGuideById(
                         lookupModuleId(document.querySelector('[data-id="guides"]'))
-                      )
+                      );
                     }
                   },
                 },
-              })
+              });
 
+              /**
+               * Helps dynamically create the Navigation items
+               * based on what Customers have access to in the guide payload
+               */
               pendo.createNavItems = function () {
-                var navItemsArray = []
+                var navItemsArray = [];
                 pendo._.each(resourceCenterModuleLookup, function (module) {
                   if (pendo.findGuideById(module.id)) {
-                    navItemsArray.push(module.html)
+                    navItemsArray.push(module.html);
                   }
-                })
-                pendo.dom('.rc-main-nav').append(navItemsArray.join('\n'))
-              }
+                });
+                pendo.dom('.rc-main-nav').append(navItemsArray.join('\n'));
+              };
 
+              /**
+               * Sets up the observer to create the new Resource Center container
+               */
               pendo.addBodyMutationListener = function () {
-                var rcWrapper = document.createElement('div')
-                rcWrapper.innerHTML = rcHtml
+                var rcWrapper = document.createElement('div');
+                rcWrapper.innerHTML = rcHtml;
 
-                var target = document.querySelector('body')
-                target.appendChild(rcWrapper.firstElementChild)
+                var target = document.querySelector('body');
+                target.appendChild(rcWrapper.firstElementChild);
 
                 // create an observer instance
                 var observer = new MutationObserver(function (mutations) {
@@ -114,7 +122,7 @@ export default function Home({ posts }) {
                       ) {
                         document
                           .getElementById('_adobe-rc_resource-center-container')
-                          .classList.remove('_adobe-rc_pendo-invisible')
+                          .classList.remove('_adobe-rc_pendo-invisible');
 
                         if (!pendo.adobeRcTabListeners) {
                           // Adds active class to clicked tabs.  Flushes other active tabs.
@@ -126,48 +134,48 @@ export default function Home({ posts }) {
                                 Array.from(
                                   document.getElementsByClassName('_adobe-rc_rc-nav-item')
                                 ).forEach((tab) => {
-                                  tab.classList.remove('_adobe-rc_active-nav-item')
-                                })
-                                item.classList.add('_adobe-rc_active-nav-item')
-                                setNewContent(item)
+                                  tab.classList.remove('_adobe-rc_active-nav-item');
+                                });
+                                item.classList.add('_adobe-rc_active-nav-item');
+                                setNewContent(item);
                               }
-                            })
-                          })
+                            });
+                          });
 
                           // Quick function to show tab functionality
                           function setNewContent(item) {
                             // Clean up and potentially check if section is already shown
-                            pendo.BuildingBlocks.BuildingBlockResourceCenter.dismissResourceCenter()
-                            pendo.showGuideById(lookupModuleId(item))
-                            cleanUpSectionContent(item)
+                            pendo.BuildingBlocks.BuildingBlockResourceCenter.dismissResourceCenter();
+                            pendo.showGuideById(lookupModuleId(item));
+                            cleanUpSectionContent(item);
                           }
 
-                          pendo.adobeRcTabListeners = true
+                          pendo.adobeRcTabListeners = true;
                         }
 
-                        var rcContainer = mutation.addedNodes[0]
-                        var _adobePane = pendo.dom('#_adobe-rc_rc-content-pane')[0]
-                        _adobePane.appendChild(rcContainer)
+                        var rcContainer = mutation.addedNodes[0];
+                        var _adobePane = pendo.dom('#_adobe-rc_rc-content-pane')[0];
+                        _adobePane.appendChild(rcContainer);
 
                         if (
                           !pendo.BuildingBlocks.BuildingBlockResourceCenter.findShownResourceCenterModule()
                         ) {
-                          var guidesModuleNode = document.querySelector('[data-id="guides"]')
-                          pendo.showGuideById(lookupModuleId(guidesModuleNode))
-                          cleanUpSectionContent(guidesModuleNode)
+                          var guidesModuleNode = document.querySelector('[data-id="guides"]');
+                          pendo.showGuideById(lookupModuleId(guidesModuleNode));
+                          cleanUpSectionContent(guidesModuleNode);
                         }
 
                         // Close custom RC when Escape key is pressed
                         pendo.dom('body').on('keydown', function (e) {
                           if (e.which === 27) {
-                            closeCustomResourceCenter()
+                            closeCustomResourceCenter();
                           }
-                        })
-                        addTriggerEvent()
+                        });
+                        addTriggerEvent();
                       }
                     }
-                  })
-                })
+                  });
+                });
 
                 var config = {
                   attributeFilter: ['data-layout'],
@@ -175,12 +183,15 @@ export default function Home({ posts }) {
                   childList: true,
                   characterData: true,
                   subtree: false,
-                }
+                };
 
-                observer.observe(target, config)
-              }
-              var openClass = 'guide-accordion-open'
-              var rcHtml = [
+                observer.observe(target, config);
+              };
+
+              const delaySearch = debounce(createSearchResultsContainer, 650, false);
+              const delayResetSearch = debounce(removeSearchContainer, 350, false);
+              const openClass = 'guide-accordion-open';
+              const rcHtml = [
                 '<div id="_adobe-rc_resource-center-container" class="rc-container _adobe-rc_slide-right _adobe-rc_pendo-invisible">',
                 '<!-- RC HEADER -->',
                 '<div class="rc-header-section">',
@@ -191,9 +202,13 @@ export default function Home({ posts }) {
                 '<div class="_adobe-rc_rc-home-view _adobe-rc_pendo-visible">',
                 '<div id="_adobe-rc_rc-content-pane"></div>',
                 '</div>',
-              ].join('\n')
+              ].join('\n');
 
-              var resourceCenterModuleLookup = [
+              /**
+               * Object for all Resource Center menu items
+               * Add all modules in the Resource Center
+               */
+              const resourceCenterModuleLookup = [
                 {
                   displayName: 'Guides',
                   title: 'guides',
@@ -222,50 +237,59 @@ export default function Home({ posts }) {
                   html:
                     '<div class="_adobe-rc_rc-nav-item" data-id="resources" title="resources">Resources</div>',
                 },
-              ]
+              ];
 
+              /**
+               * Creates the guide accordions based on the number of guides in a category
+               * also adds the event listener to the accordions
+               * @param {Array} category List of classes for the category
+               * @param {HTMLELement} categoryGuidesElements HTMLCollection array of the guide list elements
+               */
               function addGuideAccordions(category, categoryGuidesElements) {
-                var accordionGuides = [...categoryGuidesElements].splice(0, 1).shift()
-                pendo.dom(`.${category[1]} .guide-list`).append(accordionGuides)
-                pendo.dom(`.${category[1]} .guide-list li`).addClass('hidden-element')
+                var accordionGuides = [...categoryGuidesElements].splice(0, 1).shift();
+                pendo.dom(`.${category[1]} .guide-list`).append(accordionGuides);
+                pendo.dom(`.${category[1]} .guide-list li`).addClass('hidden-element');
                 pendo.dom(`.${category[1]} .guide-accordion-button`)[0].textContent = `+ ${
                   pendo.dom(`.${category[1]} .guide-list li`).length
-                } more`
+                } more`;
                 pendo.dom(`.${category[1]} .guide-accordion-button`).on('click', function (e) {
                   // Accordion toggle logic
-                  var accordion = pendo.dom(eventTarget(e)).closest('.guide-accordion')
+                  var accordion = pendo.dom(eventTarget(e)).closest('.guide-accordion');
                   // Note: if you have nested accordions and resuse the '_pendo-module-accordion-open_'
                   // class it will close all open nested accordions as well
-                  var openAccordion = pendo.dom(`.${openClass}`)
+                  var openAccordion = pendo.dom(`.${openClass}`);
 
                   pendo.dom(`.${category[1]} .guide-list`).css({
                     height: 0,
-                  })
+                  });
 
                   if (openAccordion.length && openAccordion[0] !== accordion[0]) {
-                    closeAccordion(category, openAccordion, 'openAccordion')
+                    closeAccordion(category, openAccordion, 'openAccordion');
                   }
 
-                  accordion.toggleClass(openClass)
+                  accordion.toggleClass(openClass);
 
                   if (accordion.hasClass(openClass)) {
-                    pendo.dom(`.${category[1]} .guide-list li`).removeClass('hidden-element')
+                    pendo.dom(`.${category[1]} .guide-list li`).removeClass('hidden-element');
                     pendo.dom(`.${category[1]} .guide-accordion-button`)[0].textContent =
-                      '- Collapse'
+                      '- Collapse';
 
-                    calculateCategoryContainerHeight(category)
+                    calculateCategoryContainerHeight(category);
                     pendo.dom(`.${category[1]}`).css({
                       height:
                         pendo.pro.guideCategoryHeights[`${category[1]}`].newGuideCategoryHeight,
-                    })
+                    });
                   } else {
-                    closeAccordion(category, openAccordion, 'differentAccordion')
+                    closeAccordion(category, openAccordion, 'differentAccordion');
                   }
-                })
+                });
               }
 
+              /**
+               * Creates the guide categories
+               */
               function addGuideCategoryElements() {
-                if (pendo.dom('._pendo-text-list-ordered .guideCategory').length) return
+                if (pendo.dom('._pendo-text-list-ordered .guideCategory').length) return;
                 var categoryNodes = `<div class="guideCategory beginner">
                                                     <h3 class="categoryHeader">Beginner</h3>
                                                     </div>
@@ -280,15 +304,19 @@ export default function Home({ posts }) {
                                                     </div>
                                                     <div class="guideCategory unknown">
                                                         <h3 class="categoryHeader">Misc.</h3>
-                                                    </div>`
+                                                    </div>`;
                 var guideListContainer = pendo.dom(
                   '._pendo-resource-center-guidelist-module-list'
-                )[0]
+                )[0];
                 if (guideListContainer) {
-                  pendo.dom('._pendo-resource-center-guidelist-module-list').append(categoryNodes)
+                  pendo.dom('._pendo-resource-center-guidelist-module-list').append(categoryNodes);
                 }
               }
 
+              /**
+               * Adds the event listener for the Resource Center badge
+               * and the guide list items to close the custom container
+               */
               function addTriggerEvent() {
                 pendo.dom('._pendo-resource-center-badge-image').on(
                   'click',
@@ -298,267 +326,361 @@ export default function Home({ posts }) {
                         .dom('._pendo-resource-center-badge-container')[0]
                         .classList.contains('triggered')
                     ) {
-                      pendo.dom('#_adobe-rc_resource-center-container').addClass('hidden-element')
+                      closeCustomResourceCenter();
                     } else {
                       pendo
                         .dom('#_adobe-rc_resource-center-container')
-                        .removeClass('hidden-element')
+                        .removeClass('hidden-element');
                     }
                   }),
                   100
-                )
+                );
                 pendo.dom('._pendo-text-list-item').on('click', function () {
-                  pendo.BuildingBlocks.BuildingBlockResourceCenter.dismissResourceCenter()
-                  closeCustomResourceCenter()
-                })
+                  pendo.BuildingBlocks.BuildingBlockResourceCenter.dismissResourceCenter();
+                  closeCustomResourceCenter();
+                });
               }
 
+              /**
+               * Moves the search bar to the outer container of the Guide Category section
+               */
               function adjustSearch() {
                 var searchBar = document.getElementsByClassName(
                   '_pendo-resource-center-guidelist-module-search-bar'
-                )[0]
+                )[0];
                 if (searchBar) {
-                  pendo.dom(searchBar).appendTo('#pendo-resource-center-container')
-                  pendo.dom(searchBar).attr({ autocomplete: 'off' })
+                  pendo.dom(searchBar).appendTo('#pendo-resource-center-container');
+                  pendo.dom(searchBar).attr({ autocomplete: 'off' });
                 }
                 pendo.dom(searchBar).on('input', (e) => {
-                  setUpSearchResultsContainer()
-                  if (checkForNoMatches() === 'block') return
-                  if (e.inputType === 'insertText' && pendo.dom(searchBar)[0].value.length > 2) {
-                    var debouncedSearchResults = pendo._.debounce(createSearchResultsContainer, 120)
-                    debouncedSearchResults(
-                      pendo.dom('.guideCategory li:not([style*="display: none"])')
-                    )
+                  adjustSearchResultsContainer();
+                  if (
+                    e.inputType !== 'deleteContentBackward' &&
+                    pendo.dom(searchBar)[0].value.length > 2
+                  ) {
+                    delaySearch(
+                      pendo.dom('.guideCategory li:not([style*="display: none"])'),
+                      searchBar
+                    );
                   }
                   if (
                     e.inputType === 'deleteContentBackward' &&
                     pendo.dom(searchBar)[0].value.length === 0
                   ) {
-                    teardownSearchResultsContainer()
-                    cleanUpSectionContent(document.querySelector('[data-id="guides"]'))
-                    pendo.dom('#pendo-search-results-container').remove()
-                    pendo.dom(searchBar).focus()
+                    delayResetSearch(searchBar, true);
                   }
-                })
+                });
               }
 
+              /**
+               * Adds and removes the correct classes to the guide category elements
+               * @param {Boolean} shouldTeardown determine if we should hide the category elements
+               */
+              function adjustSearchResultsContainer(shouldTeardown) {
+                if (shouldTeardown) {
+                  pendo.dom('.categoryHeader').removeClass('hidden-element');
+                  pendo.dom('.guide-accordion-button').removeClass('hidden-element');
+                  pendo.dom('.guideCategory').removeClass('hidden-element');
+                  pendo.dom('.guide-list li').addClass('hidden-element');
+                } else {
+                  pendo.dom('.categoryHeader').addClass('hidden-element');
+                  pendo.dom('.guide-accordion-button').addClass('hidden-element');
+                  pendo.dom('.guideCategory').addClass('hidden-element');
+                  pendo.dom('.guide-list li').removeClass('hidden-element');
+                }
+              }
+
+              /**
+               * Determines the heights of the Guide Category container for the clicked accordion
+               * @param  {Array} category List of classes for the category
+               * @return  {Object} lookup object for the heights of specific category sections
+               */
               function calculateCategoryContainerHeight(category) {
                 if (pendo._.isUndefined(pendo.pro)) {
-                  pendo.pro = {}
-                  pendo.pro.guideCategoryHeights = {}
-                  pendo.pro.guideCategoryHeights[`${category[1]}`] = {}
+                  pendo.pro = {};
+                  pendo.pro.guideCategoryHeights = {};
+                  pendo.pro.guideCategoryHeights[`${category[1]}`] = {};
                 }
-                var categoryContainer = document.querySelector(`.${category[1]}`)
-                var guideListHeight = 0
+                var categoryContainer = document.querySelector(`.${category[1]}`);
+                var guideListHeight = 0;
                 var originalGuideCategoryHeight = Number(
                   pendo.dom.getComputedStyle(categoryContainer).height.replace(/\D+/g, '')
-                )
+                );
                 pendo._.each(pendo.dom(`.${category[1]} .guide-accordion li`), function (item) {
-                  guideListHeight = guideListHeight + pendo.dom(item).height()
-                })
-                var newGuideCategoryHeight = originalGuideCategoryHeight + guideListHeight
+                  guideListHeight = guideListHeight + pendo.dom(item).height();
+                });
+                var newGuideCategoryHeight = originalGuideCategoryHeight + guideListHeight;
                 return (pendo.pro.guideCategoryHeights[`${category[1]}`] = {
                   guideListHeight: guideListHeight,
                   originalGuideCategoryHeight: originalGuideCategoryHeight,
                   newGuideCategoryHeight: newGuideCategoryHeight,
-                })
+                });
               }
 
+              /**
+               * Finds the display value of the no results container
+               * @return {string} css value of the display property
+               */
               function checkForNoMatches() {
-                var noResultsContainer = pendo.dom('#pendo-no-matches-container')
-                return pendo.dom.getComputedStyle(noResultsContainer[0]).display
+                var noResultsContainer = pendo.dom('#pendo-no-matches-container');
+                return pendo.dom.getComputedStyle(noResultsContainer[0]).display;
               }
 
+              /**
+               * Object literal to handle various clean up tasks for the Resource Center menu items
+               * Also hides or displays the announcement link icon
+               * @param {HTMLElement} item html element for the Nav item
+               */
               function cleanUpSectionContent(item) {
                 var cleanUpGuides = function () {
-                  addGuideCategoryElements()
-                  adjustSearch()
+                  addGuideCategoryElements();
+                  adjustSearch();
                   if (!pendo.designer) {
-                    moveGuides()
+                    moveGuides();
                   }
-                }
+                  if (pendo.dom('#pendo-search-results-container').length) {
+                    pendo.dom('#pendo-search-results-container').addClass('hidden-element');
+                  }
+                };
 
-                var cleanUpDocs = function () {}
+                var cleanUpDocs = function () {};
 
-                var cleanUpWhatsNew = function () {}
+                var cleanUpWhatsNew = function () {};
 
-                var cleanUpResources = function () {}
+                var cleanUpResources = function () {};
 
                 var sections = {
                   guides: cleanUpGuides,
                   whatsnew: cleanUpWhatsNew,
                   docs: cleanUpDocs,
                   resources: cleanUpResources,
-                }
+                };
 
-                var id = item.dataset?.id || item.title
-                sections[id]()
-                setAnnouncementLinkIcon(item)
+                var id = item.dataset?.id || item.title;
+                sections[id]();
+                setAnnouncementLinkIcon(item);
               }
 
+              /**
+               * Sets accordions to a closed state
+               * @param  {Array} category List of classes for the category
+               * @param {HTMLElement} openAccordion the currenlty open accordion element
+               * @param {string} type represents whether to work with the currently open accordion
+               * or a different sections accordion.
+               * This could be improved.
+               */
               function closeAccordion(category, openAccordion, type) {
                 if (type === 'openAccordion') {
-                  pendo.dom(`.${openClass} .guide-list li`).addClass('hidden-element')
+                  pendo.dom(`.${openClass} .guide-list li`).addClass('hidden-element');
                   if (!pendo._.isUndefined(pendo.pro.guideCategoryHeights)) {
-                    var openCategorySection = openAccordion[0]?.dataset.section
+                    var openCategorySection = openAccordion[0]?.dataset.section;
                     var originalHeight =
                       pendo.pro.guideCategoryHeights[`${openCategorySection}`]
-                        .originalGuideCategoryHeight
-                    pendo.dom(`.${openCategorySection}`).css({ height: originalHeight })
+                        .originalGuideCategoryHeight;
+                    pendo.dom(`.${openCategorySection}`).css({ height: originalHeight });
                   }
                   pendo.dom(`.${openClass} .guide-accordion-button`)[0].textContent = `+ ${
                     pendo.dom(`.${openClass} .guide-list li`).length
-                  } more`
-                  openAccordion.toggleClass(openClass)
+                  } more`;
+                  openAccordion.toggleClass(openClass);
                 }
 
                 if (type === 'differentAccordion') {
                   pendo.dom(`.${category[1]}`).css({
                     height:
                       pendo.pro.guideCategoryHeights[`${category[1]}`].originalGuideCategoryHeight,
-                  })
-                  pendo.dom(`.${category[1]} .guide-list li`).addClass('hidden-element')
+                  });
+                  pendo.dom(`.${category[1]} .guide-list li`).addClass('hidden-element');
                   pendo.dom(`.${category[1]} .guide-accordion-button`)[0].textContent = `+ ${
                     pendo.dom(`.${category[1]} .guide-list li`).length
-                  } more`
+                  } more`;
                 }
               }
 
-              // Helper function to close the custom resource center
-              var closeCustomResourceCenter = function () {
+              /**
+               * Helper to close the custom Resource Center container
+               */
+              function closeCustomResourceCenter() {
                 pendo
                   .dom('#_adobe-rc_resource-center-container')
-                  .addClass('_adobe-rc_pendo-invisible')
-                pendo.dom('#_adobe-rc_resource-center-container').addClass('hidden-element')
+                  .addClass('_adobe-rc_pendo-invisible');
+                pendo.dom('#_adobe-rc_resource-center-container').addClass('hidden-element');
               }
 
-              function createSearchResultsContainer(results) {
-                if (checkForNoMatches() === 'block') return
+              /**
+               * Creates and adds the search results container to the DOM
+               * @param {HTMLElement} results html elements of the matching search query
+               * @param {HTMLElement} searchElement html search input element
+               */
+              function createSearchResultsContainer(results, searchElement) {
+                var noMatchesDisplay = checkForNoMatches();
+                if (noMatchesDisplay === 'block') {
+                  removeSearchContainer(searchElement);
+                  return;
+                }
                 if (pendo.dom('#pendo-search-results-container').length) {
-                  pendo.dom('._search-results-list').append(results)
+                  pendo.dom('._search-results-list').append(results);
                 } else {
                   var html = [
-                    '<div id="pendo-search-results-container">',
-                    '<div id="_pendo-guide-search-results" class="bb-text _pendo-simple-text"',
-                    'style="display: block; color: rgb(0, 0, 0); font-size: 14px; letter-spacing: 0px; line-height: 1.4; overflow-wrap: break-word; padding: 24px 0px 0px; position: relative; text-transform: none; width: auto; font-weight: 400; text-align: center; margin: 0px; float: none; vertical-align: baseline; white-space: pre-wrap;">',
+                    '<div id="pendo-search-results-container" class="hidden-element">',
+                    '<div id="_pendo-guide-search-results" class="bb-text _pendo-simple-text _search-results-header">',
                     'Search Results</div>',
-                    '<div class="bb-text _pendo-simple-text _search-results-list"',
-                    'style="display: block; color: rgb(106, 108, 117); font-size: 12px; letter-spacing: 0px; line-height: 1.4; overflow-wrap: break-word; padding: 18px 0px 0px; position: relative; text-transform: none; width: auto; font-weight: 400; text-align: center; margin: 0px 43px; float: none; vertical-align: baseline; white-space: pre-wrap;">',
+                    '<div class="bb-text _pendo-simple-text _search-results-list">',
                     '</div>',
                     '</div>',
-                  ].join('\n')
-                  pendo.dom('._pendo-resource-center-guidelist-module-list').append(html)
-                  pendo.dom('._search-results-list').append(results)
+                  ].join('\n');
+                  pendo.dom('._pendo-resource-center-guidelist-module-list').append(html);
+                  pendo.dom('._search-results-list').append(results);
+                  pendo.dom('#pendo-search-results-container').removeClass('hidden-element');
                 }
               }
 
+              /**
+               * Helper to return the element of an event
+               * @param {Event} e event object
+               * @return HTML ELement object of the targeted event
+               */
               function eventTarget(e) {
-                return (e && e.target) || e.srcElement
+                return (e && e.target) || e.srcElement;
               }
 
+              /**
+               * Helper to lookup nested values in an object
+               * This could be better.
+               * @param {Object} object search object
+               * @param {string} key the key to search for in the object
+               * @return the first value in the object that matches the key
+               */
               function findDomJsonVal(object, key) {
-                var value
+                var value;
                 Object.keys(object).some(function (k) {
                   if (k === key) {
-                    value = object[k]
-                    return true
+                    value = object[k];
+                    return true;
                   }
                   if (object[k] && typeof object[k] === 'object') {
-                    value = findDomJsonVal(object[k], key)
-                    return value !== undefined
+                    value = findDomJsonVal(object[k], key);
+                    return value !== undefined;
                   }
-                })
-                return value
+                });
+                return value;
               }
 
+              /**
+               * Helper to lookup the id associated with a Resource Center Menu item
+               * @param {HTMLElement} item html element for the Nav item
+               * @return the first value that matches all of the key-value pairs
+               */
               function lookupModuleId(item) {
-                return pendo._.findWhere(resourceCenterModuleLookup, { title: item.title }).id
+                return pendo._.findWhere(resourceCenterModuleLookup, { title: item.title }).id;
               }
 
+              /**
+               * Places guides into the correct category based on the name of the guide
+               */
               function moveGuides() {
+                // Find all the guides in the guide list module
                 var eligibleGuides = pendo.BuildingBlocks.BuildingBlockResourceCenter.getResourceCenter()
-                  .activeModule.guidesInModule
+                  .activeModule.guidesInModule;
+                /*
+                 * Find the object of guides for the guide list module. This contains the display name values.
+                 */
                 var guideModuleChildren = findDomJsonVal(
                   pendo.BuildingBlocks.BuildingBlockResourceCenter.getResourceCenter().activeModule.activeStep()
                     .domJson,
                   'templateChildren'
-                )
+                );
 
+                /*
+                 * Determine section a guide should go into based on the name.
+                 */
                 function checkGuideNameForSection(guide) {
                   if (guide.name.includes('[ADMIN]')) {
-                    guide.category = 'admin'
-                    return 'admin'
+                    guide.category = 'admin';
+                    return 'admin';
                   } else if (guide.name.includes('[BEGINNER]')) {
-                    guide.category = 'beginner'
-                    return 'beginner'
+                    guide.category = 'beginner';
+                    return 'beginner';
                   } else if (guide.name.includes('[INTERMEDIATE]')) {
-                    guide.category = 'intermediate'
-                    return 'intermediate'
+                    guide.category = 'intermediate';
+                    return 'intermediate';
                   } else if (guide.name.includes('[ADVANCED]')) {
-                    guide.category = 'advanced'
-                    return 'advanced'
+                    guide.category = 'advanced';
+                    return 'advanced';
                   } else {
-                    guide.category = 'unknown'
-                    return 'unknown'
+                    guide.category = 'unknown';
+                    return 'unknown';
                   }
                 }
 
                 if (eligibleGuides) {
                   pendo._.each(eligibleGuides, function (guide) {
-                    var guideSection = checkGuideNameForSection(guide)
-                    pendo
-                      .dom(`li:contains("${guide.name.slice(guide.name.indexOf('] ') + 2)}")`)
-                      .appendTo(pendo.dom(`.${guideSection}`))
-                  })
+                    var guideSection = checkGuideNameForSection(guide);
+                    if (guideModuleChildren) {
+                      var moduleChildGuide = guideModuleChildren.find(function (moduleGuide) {
+                        return moduleGuide.id === guide.id;
+                      });
+                      pendo
+                        .dom(`li:contains("${moduleChildGuide.title}")`)
+                        .appendTo(pendo.dom(`.${guideSection}`));
+                    }
+                  });
                   pendo._.each(pendo.dom('.guideCategory'), (category) => {
                     if (category.getElementsByTagName('LI').length < 1) {
-                      category.classList.add('hidden-element')
+                      category.classList.add('hidden-element');
                     }
                     if (category.getElementsByTagName('LI').length > 2) {
-                      pendo.dom(`.${category.classList[1]} .guide-accordion`).remove()
+                      pendo.dom(`.${category.classList[1]} .guide-accordion`).remove();
                       pendo
                         .dom(category)
                         .append(
                           `<div class="guide-accordion" data-section="${category.classList[1]}"><button class="guide-accordion-button"></button><div class="guide-list"</div></div>`
-                        )
+                        );
                       addGuideAccordions(
                         [...category.classList],
                         category.getElementsByTagName('LI')
-                      )
+                      );
                     }
-                  })
+                  });
                 }
               }
 
+              /**
+               * Resets the state of the guide list module
+               * @param {HTMLElement} searchInputElement html search input element
+               * @param {Boolean} shouldTeardown determine if we should hide the category elements
+               */
+              function removeSearchContainer(searchInputElement, shouldTeardown) {
+                if (!pendo.dom('#pendo-search-results-container').hasClass('hidden-element')) {
+                  pendo.dom('#pendo-search-results-container').addClass('hidden-element');
+                }
+                if (shouldTeardown) {
+                  adjustSearchResultsContainer(shouldTeardown);
+                }
+                cleanUpSectionContent(document.querySelector('[data-id="guides"]'));
+                pendo.dom('#pendo-search-results-container').remove();
+                pendo.dom(searchInputElement).focus();
+              }
+
+              /**
+               * Add the open in new tab icon to the Announcement module
+               * @param {HTMLElement} item html nav bar element
+               */
               function setAnnouncementLinkIcon(item) {
-                var id = item.dataset?.id || item.title
+                var id = item.dataset?.id || item.title;
                 var announcementLinkNode =
-                  '<a id="announcement-link-icon" class="icon-fontello-37" href="https://pendo.io" target="_blank"></a>'
+                  '<a id="announcement-link-icon" class="icon-fontello-37" href="https://pendo.io" target="_blank"></a>';
                 if (id !== 'whatsnew' && pendo.dom('#announcement-link-icon').length) {
                   pendo
                     .dom('._adobe-rc_rc-home-view')[0]
-                    .removeChild(pendo.dom('#announcement-link-icon')[0])
+                    .removeChild(pendo.dom('#announcement-link-icon')[0]);
                 } else {
                   if (id === 'whatsnew' && !pendo.dom('#announcement-link-icon').length) {
-                    pendo.dom('#pendo-resource-center-container').append(announcementLinkNode)
+                    pendo.dom('#pendo-resource-center-container').append(announcementLinkNode);
                   }
                 }
               }
-
-              function setUpSearchResultsContainer() {
-                pendo.dom('.categoryHeader').addClass('hidden-element')
-                pendo.dom('.guide-accordion-button').addClass('hidden-element')
-                pendo.dom('.guideCategory').addClass('hidden-element')
-                pendo.dom('.guide-list li').removeClass('hidden-element')
-              }
-
-              function teardownSearchResultsContainer() {
-                pendo.dom('.categoryHeader').removeClass('hidden-element')
-                pendo.dom('.guide-accordion-button').removeClass('hidden-element')
-                pendo.dom('.guideCategory').removeClass('hidden-element')
-                pendo.dom('.guide-list li').addClass('hidden-element')
-              }
-            })('a2d9f4cd-4232-4b44-510a-9a8837a517f9')
+            })('a2d9f4cd-4232-4b44-510a-9a8837a517f9');
           }
         })()}
       />
@@ -584,7 +706,7 @@ export default function Home({ posts }) {
         <ul className="divide-y divide-gray-200 dark:divide-gray-700">
           {!posts.length && 'No posts found.'}
           {posts.slice(0, MAX_DISPLAY).map((frontMatter) => {
-            const { slug, date, title, summary, tags } = frontMatter
+            const { slug, date, title, summary, tags } = frontMatter;
             return (
               <li key={slug} className="py-12">
                 <article>
@@ -629,7 +751,7 @@ export default function Home({ posts }) {
                   </div>
                 </article>
               </li>
-            )
+            );
           })}
         </ul>
       </div>
@@ -645,5 +767,5 @@ export default function Home({ posts }) {
         </div>
       )}
     </>
-  )
+  );
 }

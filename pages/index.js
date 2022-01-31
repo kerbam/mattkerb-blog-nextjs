@@ -546,12 +546,12 @@ export default function Home({ posts }) {
 
               /**
                * Helper to lookup nested values in an object
-               * This could be better.
+               * This could be improved.
                * @param {Object} object search object
                * @param {string} key the key to search for in the object
                * @return the first value in the object that matches the key
                */
-              function findDomJsonVal(object, key) {
+              function findJsonVal(object, key) {
                 var value;
                 Object.keys(object).some(function (k) {
                   if (k === key) {
@@ -559,7 +559,7 @@ export default function Home({ posts }) {
                     return true;
                   }
                   if (object[k] && typeof object[k] === 'object') {
-                    value = findDomJsonVal(object[k], key);
+                    value = findJsonVal(object[k], key);
                     return value !== undefined;
                   }
                 });
@@ -585,7 +585,7 @@ export default function Home({ posts }) {
                 /*
                  * Find the object of guides for the guide list module. This contains the display name values.
                  */
-                var guideModuleChildren = findDomJsonVal(
+                var guideModuleChildren = findJsonVal(
                   pendo.BuildingBlocks.BuildingBlockResourceCenter.getResourceCenter().activeModule.activeStep()
                     .domJson,
                   'templateChildren'

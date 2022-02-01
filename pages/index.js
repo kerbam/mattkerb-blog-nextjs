@@ -78,10 +78,6 @@ export default function Home({ posts }) {
                   guidesLoaded: function () {
                     if (!pendo.dom('._adobe-rc_rc-nav-item').length) {
                       pendo.createNavItems();
-                    } else {
-                      pendo.showGuideById(
-                        lookupModuleId(document.querySelector('[data-id="guides"]'))
-                      );
                     }
                   },
                 },
@@ -160,9 +156,35 @@ export default function Home({ posts }) {
                         if (
                           !pendo.BuildingBlocks.BuildingBlockResourceCenter.findShownResourceCenterModule()
                         ) {
-                          var guidesModuleNode = document.querySelector('[data-id="guides"]');
-                          pendo.showGuideById(lookupModuleId(guidesModuleNode));
-                          cleanUpSectionContent(guidesModuleNode);
+                          // Do a lookup of the default module
+                          var defaultModule = pendo._.findWhere(resourceCenterModuleLookup, {
+                            default: true,
+                          });
+                          // This might be simplified since we might infer that
+                          // if we have the guide (through lookupModuleId) then we will have the nav item
+                          if (
+                            defaultModule &&
+                            lookupModuleId(defaultModule) &&
+                            document.querySelector(`[data-id="${defaultModule.title}"]`)
+                          ) {
+                            pendo.showGuideById(defaultModule.id);
+                            cleanUpSectionContent(
+                              document.querySelector(`[data-id="${defaultModule.title}"]`)
+                            );
+                            pendo
+                              .dom(`[data-id="${defaultModule.title}"]`)
+                              .addClass('_adobe-rc_active-nav-item');
+                          } else {
+                            // If the default module isn't available for the user, show the first item in the nav bar
+                            var firstNavItemTitle = pendo.dom('._adobe-rc_rc-nav-item')[0]?.title;
+                            var firstNavItemId = pendo._.findWhere(resourceCenterModuleLookup, {
+                              title: firstNavItemTitle,
+                            }).id;
+                            pendo.showGuideById(firstNavItemId);
+                            pendo
+                              .dom(`[data-id="${firstNavItemTitle}"]`)
+                              .addClass('_adobe-rc_active-nav-item');
+                          }
                         }
 
                         // Close custom RC when Escape key is pressed
@@ -214,7 +236,8 @@ export default function Home({ posts }) {
                   title: 'guides',
                   id: '-HkbchdtpyVLjDapPPl_o-Rh6cE@pQqHDQbxwFzIXVZrd4J5sQrpfno',
                   html:
-                    '<div class="_adobe-rc_rc-nav-item _adobe-rc_active-nav-item" data-id="guides" title="guides">Guides</div>',
+                    '<div class="_adobe-rc_rc-nav-item" data-id="guides" title="guides">Guides</div>',
+                  default: true,
                 },
                 {
                   displayName: 'Docs & Community',
@@ -398,6 +421,8 @@ export default function Home({ posts }) {
               function calculateCategoryContainerHeight(category) {
                 if (pendo._.isUndefined(pendo.pro)) {
                   pendo.pro = {};
+                }
+                if (pendo._.isUndefined(pendo.pro.guideCategoryHeights)) {
                   pendo.pro.guideCategoryHeights = {};
                   pendo.pro.guideCategoryHeights[`${category[1]}`] = {};
                 }
@@ -505,6 +530,7 @@ export default function Home({ posts }) {
                   .dom('#_adobe-rc_resource-center-container')
                   .addClass('_adobe-rc_pendo-invisible');
                 pendo.dom('#_adobe-rc_resource-center-container').addClass('hidden-element');
+                pendo.dom('._adobe-rc_active-nav-item').removeClass('_adobe-rc_active-nav-item');
               }
 
               /**
@@ -657,7 +683,11 @@ export default function Home({ posts }) {
                 if (shouldTeardown) {
                   adjustSearchResultsContainer(shouldTeardown);
                 }
-                cleanUpSectionContent(document.querySelector('[data-id="guides"]'));
+                // Reset back to the guide module
+                var guideModuleTitle = pendo._.findWhere(resourceCenterModuleLookup, {
+                  title: 'guides',
+                }).title;
+                cleanUpSectionContent(document.querySelector(`[data-id="${guideModuleTitle}"]`));
                 pendo.dom('#pendo-search-results-container').remove();
                 pendo.dom(searchInputElement).focus();
               }

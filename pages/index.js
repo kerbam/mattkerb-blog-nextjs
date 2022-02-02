@@ -22,6 +22,10 @@ export default function Home({ posts }) {
         id="pendo"
         onLoad={(function () {
           if (process.browser) {
+            /**
+             * Don't overwrite your current installation values below.
+             * This is the sample snippet.
+             **/
             (function (apiKey) {
               (function (p, e, n, d, o) {
                 var v, w, x, y, z;
@@ -50,7 +54,6 @@ export default function Home({ posts }) {
               pendo.initialize({
                 visitor: {
                   id: 'VISITOR-UNIQUE-ID',
-                  transLang: 'en-us', // Required if user is logged in
                   // email:        // Recommended if using Pendo Feedback, or NPS Email
                   // full_name:    // Recommended if using Pendo Feedback
                   // role:         // Optional
@@ -71,11 +74,13 @@ export default function Home({ posts }) {
                   // You can add any additional account level key-values here,
                   // as long as it's not one of the above reserved names.
                 },
+                /**
+                 * This is the new snippet to create the new Resource Center
+                 * Merge with any existing content you have for the events object.
+                 */
                 events: {
-                  ready: function () {
-                    pendo.addBodyMutationListener();
-                  },
                   guidesLoaded: function () {
+                    pendo.addBodyMutationListener();
                     if (!pendo.dom('._adobe-rc_rc-nav-item').length) {
                       pendo.createNavItems();
                     }
@@ -229,6 +234,10 @@ export default function Home({ posts }) {
               /**
                * Object for all Resource Center menu items
                * Add all modules in the Resource Center
+               * Replace all the content here with the correct Guide ids for the section
+               * The code is dependent on having the guide ids in this object
+               * Make sure this has all the modules a customer could have access to
+               * regardless of segmentation
                */
               const resourceCenterModuleLookup = [
                 {
@@ -314,20 +323,20 @@ export default function Home({ posts }) {
               function addGuideCategoryElements() {
                 if (pendo.dom('._pendo-text-list-ordered .guideCategory').length) return;
                 var categoryNodes = `<div class="guideCategory beginner">
-                                                    <h3 class="categoryHeader">Beginner</h3>
-                                                    </div>
-                                                    <div class="guideCategory intermediate">
-                                                        <h3 class="categoryHeader">Intermediate</h3>
-                                                    </div>
-                                                    <div class="guideCategory advanced">
-                                                        <h3 class="categoryHeader">Advanced</h3>
-                                                    </div>
-                                                    <div class="guideCategory admin">
-                                                        <h3 class="categoryHeader">Admin</h3>
-                                                    </div>
-                                                    <div class="guideCategory unknown">
-                                                        <h3 class="categoryHeader">Misc.</h3>
-                                                    </div>`;
+                        <h3 class="categoryHeader">Beginner</h3>
+                        </div>
+                        <div class="guideCategory intermediate">
+                            <h3 class="categoryHeader">Intermediate</h3>
+                        </div>
+                        <div class="guideCategory advanced">
+                            <h3 class="categoryHeader">Advanced</h3>
+                        </div>
+                        <div class="guideCategory admin">
+                            <h3 class="categoryHeader">Admin</h3>
+                        </div>
+                        <div class="guideCategory unknown">
+                            <h3 class="categoryHeader">Misc.</h3>
+                        </div>`;
                 var guideListContainer = pendo.dom(
                   '._pendo-resource-center-guidelist-module-list'
                 )[0];
@@ -618,7 +627,7 @@ export default function Home({ posts }) {
                 );
 
                 /*
-                 * Determine section a guide should go into based on the name.
+                 * Determine section a guide should go into based on the guide object name.
                  */
                 function checkGuideNameForSection(guide) {
                   if (guide.name.includes('[ADMIN]')) {

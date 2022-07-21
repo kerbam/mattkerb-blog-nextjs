@@ -135,6 +135,7 @@
   width: 100% !important;
   top: 0px !important;
   height: 480px !important;
+  inset: auto !important;
 }
 
 #pendo-resource-center-module-title-container {
@@ -145,7 +146,7 @@
   width: 100% !important;
 }
 
-._pendo-text-list-ordered {
+#pendo-resource-center-container ._pendo-text-list-ordered {
   border: 0px !important;
   height: 430px !important;
   padding: 0px !important;
@@ -165,7 +166,7 @@
 
 #_adobe-rc_resource-center-container {
   position: absolute;
-  bottom: 0;
+  top: 122px;
   right: 0;
   border: 1px solid #cacaca;
   background-color: #f5f5f5;
@@ -214,14 +215,14 @@
 }
 
 ._adobe-rc_rc-nav-item:hover {
-  border-bottom: 2px solid #05758a;
+  border-bottom: 2px solid #323232;
   box-sizing: border-box;
   cursor: pointer;
   font-weight: 700;
 }
 
 ._adobe-rc_active-nav-item {
-  border-bottom: 2px solid #05758a;
+  border-bottom: 2px solid #323232;
   box-sizing: border-box;
   cursor: pointer;
   font-weight: 700;
@@ -285,7 +286,6 @@
   font-style: normal;
   font-weight: normal;
   font-size: 18px;
-  speak: none;
   display: inline-block;
   text-decoration: inherit;
   width: 1em;
@@ -327,7 +327,7 @@
 
 .categoryHeader {
   text-align: left;
-  font: normal normal bold 12px/18px Adobe Clean;
+  font: normal normal bold 12px/18px adobe-clean;
   letter-spacing: 0.72px;
   color: #2c2c2c;
   text-transform: uppercase;
@@ -355,7 +355,7 @@
 .guide-accordion-button,
 ._search-results-list ._pendo-simple-text {
   text-align: left !important;
-  font: normal normal normal 14px/17px Adobe Clean !important;
+  font: normal normal normal 14px/17px adobe-clean !important;
   letter-spacing: 0px !important;
   color: #747474 !important;
   opacity: 1 !important;

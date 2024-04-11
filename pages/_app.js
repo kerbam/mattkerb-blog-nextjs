@@ -66,7 +66,61 @@ export default function App({ Component, pageProps }) {
                     // as long as it's not one of the above reserved names.
                   },
                 })
-              })('f72d5f01-b371-4cad-7f04-df672c356b81') // 7a22a7d9-70ec-4310-7291-42140a3c1c52
+              })('f72d5f01-b371-4cad-7f04-df672c356b81')
+            }
+          })()}
+        />
+        <Script
+          id="drift"
+          onLoad={(function () {
+            if (process.browser) {
+              !(function () {
+                var t = (window.driftt = window.drift = window.driftt || [])
+                if (!t.init) {
+                  if (t.invoked)
+                    return void (
+                      window.console &&
+                      console.error &&
+                      console.error('Drift snippet included twice.')
+                    )
+                  ;(t.invoked = !0),
+                    (t.methods = [
+                      'identify',
+                      'config',
+                      'track',
+                      'reset',
+                      'debug',
+                      'show',
+                      'ping',
+                      'page',
+                      'hide',
+                      'off',
+                      'on',
+                    ]),
+                    (t.factory = function (e) {
+                      return function () {
+                        var n = Array.prototype.slice.call(arguments)
+                        return n.unshift(e), t.push(n), t
+                      }
+                    }),
+                    t.methods.forEach(function (e) {
+                      t[e] = t.factory(e)
+                    }),
+                    (t.load = function (t) {
+                      var e = 3e5,
+                        n = Math.ceil(new Date() / e) * e,
+                        o = document.createElement('script')
+                      ;(o.type = 'text/javascript'),
+                        (o.async = !0),
+                        (o.crossorigin = 'anonymous'),
+                        (o.src = 'https://js.driftt.com/include/' + n + '/' + t + '.js')
+                      var i = document.getElementsByTagName('script')[0]
+                      i.parentNode.insertBefore(o, i)
+                    })
+                }
+              })()
+              drift.SNIPPET_VERSION = '0.3.1'
+              drift.load('vpar49barfcp')
             }
           })()}
         />
